@@ -151,6 +151,7 @@
           <label>AI backend</label>
           <div class="seg" id="backend">
             <button type="button" data-v="mock" class="on">Mock</button>
+            <button type="button" data-v="ollama" id="ollamaBtn">Ollama</button>
             <button type="button" data-v="claude" id="claudeBtn">Claude</button>
           </div>
         </div>
@@ -181,12 +182,23 @@ const DECISION = {
 
 async function init() {
   const [cfg, cust, samples] = await Promise.all(["/api/config", "/api/customers", "/api/samples"].map(u => fetch(u).then(r => r.json())));
-  $("#modelPill").textContent = cfg.claude_available ? `Claude available · ${cfg.model}` : "Mock mode (no API key on server)";
+  const avail = ["Mock"];
+  if (cfg.ollama_available) avail.push(`Ollama · ${cfg.ollama_model}`);
+  if (cfg.claude_available) avail.push(`Claude · ${cfg.model}`);
+  $("#modelPill").textContent = "Backends: " + avail.join("  |  ");
   $("#date").value = cfg.default_date;
+  const hints = [];
+  if (!cfg.ollama_available) {
+    $("#ollamaBtn").disabled = true;
+    hints.push(cfg.ollama_running
+      ? `Ollama is running but ${cfg.ollama_model} is not installed: run "ollama pull ${cfg.ollama_model}".`
+      : "Ollama (free, local): install it from ollama.com and start the app to enable it.");
+  }
   if (!cfg.claude_available) {
     $("#claudeBtn").disabled = true;
-    $("#backendHint").textContent = "Set ANTHROPIC_API_KEY before starting the server to enable Claude.";
+    hints.push("Claude: set ANTHROPIC_API_KEY before starting the server.");
   }
+  $("#backendHint").textContent = hints.join(" ");
   customers = cust;
   for (const c of cust) $("#email").append(new Option(c.email, c.email));
   $("#email").append(new Option("not-an-email (invalid input test)", "not-an-email"));
@@ -228,7 +240,8 @@ function setStages(states) {
 }
 
 async function run() {
-  const btn = $("#run"); btn.disabled = true; btn.textContent = "Agent is working…";
+  const btn = $("#run"); btn.disabled = true;
+  btn.textContent = backend === "mock" ? "Agent is working…" : `Agent is working with ${backend}… (local models can take 10–60 s)`;
   setStages([]);
   const body = { ticket_id: btn.dataset.ticket || "WEB-" + Date.now().toString().slice(-5), customer_email: $("#email").value,
                  message: $("#message").value, received_at: $("#date").value || null, backend };

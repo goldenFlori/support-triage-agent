@@ -24,7 +24,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--message", help="Ticket text (instead of a file).")
     p.add_argument("--email", default="anna@example.com", help="Customer email for --message.")
     p.add_argument("--date", default=None, help="Reference date YYYY-MM-DD for --message (default: today).")
-    p.add_argument("--backend", choices=["mock", "claude"], help="Override TRIAGE_BACKEND.")
+    p.add_argument("--backend", choices=["mock", "claude", "ollama"], help="Override TRIAGE_BACKEND.")
     p.add_argument("--summary-only", action="store_true", help="Print only the human-readable summary.")
     p.add_argument("--log-level", default="WARNING", help="INFO shows the full trace on stderr.")
     p.add_argument("--log-file", type=Path, default=PROJECT_ROOT / "logs" / "trace.jsonl")
