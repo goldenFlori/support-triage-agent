@@ -1,0 +1,6 @@
+{
+  "ticket_id": "T-001",
+  "customer_email": "anna@example.com",
+  "message": "Hi, my order #1001 arrived broken - the left earcup is cracked. I want my money back please.",
+  "received_at": "2026-11-11"
+}

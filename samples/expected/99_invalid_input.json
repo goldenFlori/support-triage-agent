@@ -1,0 +1,8 @@
+{
+  "ticket_id": "T-999",
+  "error": "invalid_ticket",
+  "details": [
+    "customer_email: String should match pattern '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$'",
+    "message: Value error, message must not be blank"
+  ]
+}

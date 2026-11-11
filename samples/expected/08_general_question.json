@@ -1,0 +1,30 @@
+{
+  "ticket_id": "T-008",
+  "intent": "general_question",
+  "order_id": null,
+  "decision": "auto_resolve",
+  "priority": "low",
+  "refund_amount_eur": null,
+  "policy_references": [
+    "general"
+  ],
+  "customer_reply": "Thanks for your question! We ship to all EU countries. Delivery outside the EU is not available.\n\nBest regards,\nCustomer Support",
+  "reasoning": "General question answered from policy.",
+  "guardrail_flags": [],
+  "overrides": [],
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool": "search_policy",
+      "input": {
+        "query": "Do you ship to Switzerland?"
+      },
+      "ok": true,
+      "output_preview": "{\"results\": [{\"source\": \"general\", \"text\": \"We ship to all EU countries. Delivery outside the EU is not available.\", \"score\": 2.639}]}",
+      "duration_ms": 0.07
+    }
+  ],
+  "backend": "mock",
+  "steps_used": 2,
+  "summary": "Ticket T-008: general question -> auto resolve [priority low]. Reason: General question answered from policy. Tools used: search_policy."
+}

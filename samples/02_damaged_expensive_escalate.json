@@ -1,0 +1,6 @@
+{
+  "ticket_id": "T-002",
+  "customer_email": "carla@example.com",
+  "message": "The TV from order #1003 has a smashed screen. I need a refund.",
+  "received_at": "2026-11-11"
+}

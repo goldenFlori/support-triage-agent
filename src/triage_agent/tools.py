@@ -219,7 +219,7 @@ def evaluate_eligibility(order: Order, reason: str, today: date, settings: Setti
             window = settings.refund_window_days if reason == "damaged" else 14
             if days > window:
                 eligible = False
-                reasons.append(f"Delivered {days} days ago; the {reason} refund window is {window} days.")
+                reasons.append(f"Delivered {days} days ago; the {reason.replace('_', '-')} refund window is {window} days.")
             else:
                 reasons.append(f"Delivered {days} days ago, within the {window}-day window.")
             if reason == "change_of_mind" and eligible:

@@ -1,0 +1,6 @@
+{
+  "ticket_id": "T-010",
+  "customer_email": "eva@example.com",
+  "message": "Please cancel order #1005, I ordered by mistake.",
+  "received_at": "2026-11-11"
+}

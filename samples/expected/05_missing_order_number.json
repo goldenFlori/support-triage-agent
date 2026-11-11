@@ -1,0 +1,17 @@
+{
+  "ticket_id": "T-005",
+  "intent": "damaged_item",
+  "order_id": null,
+  "decision": "need_more_info",
+  "priority": "low",
+  "refund_amount_eur": null,
+  "policy_references": [],
+  "customer_reply": "Thanks for reaching out! Could you send us your order number (for example #1001) so we can look into this?\n\nBest regards,\nCustomer Support",
+  "reasoning": "No order number in the message.",
+  "guardrail_flags": [],
+  "overrides": [],
+  "tool_calls": [],
+  "backend": "mock",
+  "steps_used": 1,
+  "summary": "Ticket T-005: damaged item -> need more info [priority low]. Reason: No order number in the message. Tools used: none."
+}

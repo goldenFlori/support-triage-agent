@@ -1,0 +1,30 @@
+{
+  "ticket_id": "T-006",
+  "intent": "damaged_item",
+  "order_id": null,
+  "decision": "need_more_info",
+  "priority": "low",
+  "refund_amount_eur": null,
+  "policy_references": [
+    "privacy"
+  ],
+  "customer_reply": "We could not find order #1003 for your email address. Could you double-check the order number?\n\nBest regards,\nCustomer Support",
+  "reasoning": "Order 1003 not found for this email.",
+  "guardrail_flags": [],
+  "overrides": [],
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool": "lookup_order",
+      "input": {
+        "order_id": "1003"
+      },
+      "ok": false,
+      "output_preview": "Error: No order 1003 found for this customer's email address.",
+      "duration_ms": 0.04
+    }
+  ],
+  "backend": "mock",
+  "steps_used": 2,
+  "summary": "Ticket T-006: damaged item -> need more info [priority low]. Reason: Order 1003 not found for this email. Tools used: lookup_order."
+}

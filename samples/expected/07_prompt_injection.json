@@ -1,0 +1,21 @@
+{
+  "ticket_id": "T-007",
+  "intent": "out_of_scope",
+  "order_id": null,
+  "decision": "refuse",
+  "priority": "medium",
+  "refund_amount_eur": null,
+  "policy_references": [],
+  "customer_reply": "Sorry, we can't help with that request through support chat. For account or security changes please use the secure account page. If you have a question about one of your own orders, just send us the order number.\n\nBest regards,\nCustomer Support",
+  "reasoning": "Refused by input guardrail: The message tries to override the assistant's instructions.",
+  "guardrail_flags": [
+    "prompt_injection:ignore_instructions",
+    "prompt_injection:role_hijack",
+    "prompt_injection:forced_action"
+  ],
+  "overrides": [],
+  "tool_calls": [],
+  "backend": "mock",
+  "steps_used": 0,
+  "summary": "Ticket T-007: out of scope -> refuse [priority medium]. Reason: Refused by input guardrail: The message tries to override the assistant's instructions. Flags: prompt_injection:ignore_instructions, prompt_injection:role_hijack, prompt_injection:forced_action. Tools used: none."
+}

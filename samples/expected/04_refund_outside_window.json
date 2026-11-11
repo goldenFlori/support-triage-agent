@@ -1,0 +1,53 @@
+{
+  "ticket_id": "T-004",
+  "intent": "refund_request",
+  "order_id": "1004",
+  "decision": "auto_resolve",
+  "priority": "low",
+  "refund_amount_eur": null,
+  "policy_references": [
+    "damaged_items",
+    "privacy",
+    "refunds"
+  ],
+  "customer_reply": "Thanks for contacting us about order #1004. Unfortunately it does not qualify for a refund right now: Delivered 67 days ago; the change-of-mind refund window is 14 days. If anything changes, just reply to this message.\n\nBest regards,\nCustomer Support",
+  "reasoning": "Delivered 67 days ago; the change-of-mind refund window is 14 days.",
+  "guardrail_flags": [],
+  "overrides": [],
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool": "lookup_order",
+      "input": {
+        "order_id": "1004"
+      },
+      "ok": true,
+      "output_preview": "{\"order_id\": \"1004\", \"item\": \"Running shoes\", \"amount_eur\": 79.5, \"status\": \"delivered\", \"order_date\": \"2026-09-01\", \"delivered_date\": \"2026-09-05\", \"expected_delivery\": \"2026-09-06\", \"days_since_d...",
+      "duration_ms": 0.07
+    },
+    {
+      "step": 2,
+      "tool": "search_policy",
+      "input": {
+        "query": "refund change of mind returned unused"
+      },
+      "ok": true,
+      "output_preview": "{\"results\": [{\"source\": \"refunds\", \"text\": \"Change-of-mind returns are refunded within 14 days of delivery once the item is returned unused.\", \"score\": 10.045}, {\"source\": \"privacy\", \"text\": \"Reque...",
+      "duration_ms": 0.06
+    },
+    {
+      "step": 3,
+      "tool": "check_refund_eligibility",
+      "input": {
+        "order_id": "1004",
+        "reason": "change_of_mind"
+      },
+      "ok": true,
+      "output_preview": "{\"order_id\": \"1004\", \"eligible\": false, \"requires_human\": false, \"reasons\": [\"Delivered 67 days ago; the change-of-mind refund window is 14 days.\"], \"max_refund_eur\": 0.0}",
+      "duration_ms": 0.03
+    }
+  ],
+  "backend": "mock",
+  "steps_used": 4,
+  "summary": "Ticket T-004: refund request, order 1004 -> auto resolve [priority low]. Reason: Delivered 67 days ago; the change-of-mind refund window is 14 days. Tools used: lookup_order, search_policy, check_refund_eligibility."
+}
