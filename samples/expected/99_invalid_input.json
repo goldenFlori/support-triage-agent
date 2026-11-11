@@ -2,7 +2,7 @@
   "ticket_id": "T-999",
   "error": "invalid_ticket",
   "details": [
-    "customer_email: String should match pattern '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$'",
+    "customer_email: Value error, must be a valid email address, e.g. anna@example.com",
     "message: Value error, message must not be blank"
   ]
 }

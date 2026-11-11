@@ -5,6 +5,10 @@ message, checks the facts with tools, applies the refund and shipping policy, an
 **structured JSON decision** plus a **human-readable summary** and a **ready-to-send reply**.
 Every step is logged.
 
+It runs as a **web app** (pick a ticket, press *Run agent*, watch every step) or from the command line.
+
+![Web UI](docs/web_ui.png)
+
 ```text
 "My order #1001 arrived broken, I want my money back"
         │
@@ -94,6 +98,8 @@ flowchart TD
 | `agent.py` | The orchestrator: loop, retries, state, fallbacks, `enforce_policy()`, summary. |
 | `tracing.py` | JSON-lines events per run (`run_id`, step, tool, input, ok, duration). |
 | `cli.py` | `triage-agent` command. |
+| `web/server.py` | FastAPI backend: `/api/triage` runs the agent and returns the result plus its step-by-step trace. |
+| `web/static/index.html` | Single-page UI (plain HTML/JS, no build step): ticket form, samples, decision, customer reply, timeline of every step. |
 
 **Data flow for one ticket**
 1. `check_input` validates the ticket and screens it. Injection or out-of-scope messages are refused here, so the model never sees them.
@@ -127,7 +133,17 @@ python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\
 pip install -e ".[dev]"
 ```
 
-**Run in mock mode** (no API key needed; deterministic):
+**Start the web app** (easiest way to try it):
+
+```bash
+triage-web
+```
+
+This opens http://127.0.0.1:8000 in your browser. Click a sample (or write your own message), then press **Run agent**.
+The page shows the decision, the reply to the customer, and a timeline of every AI step and tool call.
+Stop the server with `Ctrl+C`.
+
+**Or use the command line**, in mock mode (no API key needed; deterministic):
 
 ```bash
 triage-agent samples/01_damaged_item_auto_refund.json
@@ -151,7 +167,7 @@ Mock customers you can use with `--message`: `anna@example.com` (orders 1001, 10
 ## 6. How to test / verify
 
 ```bash
-pytest                     # 69 offline tests (unit + agent behaviour + end-to-end)
+pytest                     # 74 offline tests (unit + agent behaviour + end-to-end + web API)
 pytest -m live             # 3 extra tests against the real Claude API (needs ANTHROPIC_API_KEY)
 ```
 
@@ -161,10 +177,11 @@ pytest -m live             # 3 extra tests against the real Claude API (needs AN
 | `tests/test_tools.py` | Ownership check (no cross-customer lookups), malformed IDs, policy search relevance, strict tool schemas, and a table of eligibility rules including boundaries (exactly 200 EUR). |
 | `tests/test_agent.py` | With a scripted model: retry after invalid JSON, fallback when the model never submits, step cap, API failure, model refusal, tool errors returned as `is_error`, and **rule overrides when the model approves a refund it shouldn't**. |
 | `tests/test_e2e.py` | Every sample ticket through the full pipeline compared with `samples/expected/`, the CLI end-to-end including the JSONL trace, and live Claude tests (opt-in). |
+| `tests/test_web.py` | Web API: page served, samples and customers listed, triage returns result + trace, invalid input returns 422 with field errors. |
 
 CI runs the suite on Python 3.10 and 3.12 (`.github/workflows/tests.yml`).
 
-**Manual scenarios to try**
+**Manual scenarios to try** (in the web app, click the sample with the same name, or run the command)
 
 | Try this | You should see |
 |----------|----------------|
@@ -279,9 +296,10 @@ demonstration project built for this assignment.
 ```text
 support-triage-agent/
 ├── src/triage_agent/      # agent, tools, guardrails, LLM backends, CLI
+│   └── web/               # FastAPI server + single-page UI
 ├── data/                  # mock order store + policy documents
 ├── samples/               # 12 input tickets + expected/ outputs
 ├── tests/                 # unit, agent-behaviour, e2e (+ opt-in live) tests
-├── docs/example_trace.jsonl
+├── docs/                  # example trace log, UI screenshot
 └── .github/workflows/tests.yml
 ```

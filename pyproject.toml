@@ -11,16 +11,22 @@ requires-python = ">=3.10"
 dependencies = [
     "anthropic>=2.8.0",
     "pydantic>=2.6",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "httpx>=0.27"]
 
 [project.scripts]
 triage-agent = "triage_agent.cli:main"
+triage-web = "triage_agent.web.server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+triage_agent = ["web/static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

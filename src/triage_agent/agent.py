@@ -76,8 +76,9 @@ class TriageAgent:
 
     # ------------------------------------------------------------------ public
 
-    def run(self, raw_ticket: dict[str, Any]) -> TriageResult:
-        trace = Trace(str(raw_ticket.get("ticket_id", "?")))
+    def run(self, raw_ticket: dict[str, Any], trace: Trace | None = None) -> TriageResult:
+        """Triage one ticket. Pass a `Trace` to read the step-by-step events afterwards."""
+        trace = trace or Trace(str(raw_ticket.get("ticket_id", "?")))
         trace.event("run_started", backend=self.backend.name, prompt_version=PROMPT_VERSION)
 
         # [1] input guardrails
