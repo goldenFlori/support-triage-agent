@@ -28,6 +28,7 @@ from pydantic import BaseModel, Field
 
 from triage_agent.agent import InvalidTicketError, TriageAgent
 from triage_agent.config import PROJECT_ROOT, Settings
+from triage_agent.ollama import OllamaBackend
 from triage_agent.tracing import Trace
 
 STATIC = Path(__file__).parent / "static"
@@ -43,11 +44,16 @@ class TriageRequest(BaseModel):
     customer_email: str = ""
     message: str = ""
     received_at: date | None = None
-    backend: Literal["mock", "claude"] = "mock"
+    backend: Literal["mock", "claude", "ollama"] = "mock"
 
 
 def claude_available() -> bool:
     return bool(os.getenv("ANTHROPIC_API_KEY"))
+
+
+def ollama_probe() -> OllamaBackend:
+    s = Settings.from_env()
+    return OllamaBackend(model=s.ollama_model, base_url=s.ollama_url)
 
 
 @lru_cache(maxsize=2)
@@ -64,7 +70,13 @@ def index() -> FileResponse:
 @app.get("/api/config")
 def config() -> dict[str, Any]:
     s = Settings.from_env()
-    return {"claude_available": claude_available(), "model": s.model, "default_date": "2026-11-11"}
+    probe = ollama_probe()
+    installed = probe.installed_models()
+    return {
+        "claude_available": claude_available(), "model": s.model, "default_date": "2026-11-11",
+        "ollama_running": bool(installed) or probe.is_available(),
+        "ollama_available": probe.is_available(), "ollama_model": s.ollama_model, "ollama_models": installed,
+    }
 
 
 @app.get("/api/customers")
@@ -90,6 +102,10 @@ def samples() -> list[dict[str, Any]]:
 def triage(req: TriageRequest) -> dict[str, Any]:
     if req.backend == "claude" and not claude_available():
         raise HTTPException(400, "Claude backend needs ANTHROPIC_API_KEY on the server. Use mock mode instead.")
+    if req.backend == "ollama":
+        probe = ollama_probe()
+        if not probe.is_available():
+            raise HTTPException(400, f"Ollama is not ready. Start the Ollama app and run: ollama pull {probe.model}")
     raw = {"ticket_id": req.ticket_id or "WEB-1", "customer_email": req.customer_email, "message": req.message,
            "received_at": (req.received_at or date.today()).isoformat()}
     trace = Trace(raw["ticket_id"])

@@ -25,6 +25,7 @@ from pydantic import ValidationError
 from triage_agent import guardrails
 from triage_agent.config import Settings
 from triage_agent.llm import ClaudeBackend, LLMBackend, LLMError, MockBackend
+from triage_agent.ollama import OllamaBackend
 from triage_agent.prompts import PROMPT_VERSION, SUBMIT_TOOL, SYSTEM_PROMPT, render_ticket
 from triage_agent.schemas import (
     Decision,
@@ -62,9 +63,11 @@ class _RunState:
 def build_backend(settings: Settings) -> LLMBackend:
     if settings.backend == "claude":
         return ClaudeBackend(model=settings.model, effort=settings.effort)
+    if settings.backend == "ollama":
+        return OllamaBackend(model=settings.ollama_model, base_url=settings.ollama_url)
     if settings.backend == "mock":
         return MockBackend()
-    raise ValueError(f"Unknown backend '{settings.backend}' (use 'mock' or 'claude').")
+    raise ValueError(f"Unknown backend '{settings.backend}' (use 'mock', 'claude' or 'ollama').")
 
 
 class TriageAgent:

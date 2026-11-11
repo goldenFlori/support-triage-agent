@@ -95,6 +95,7 @@ flowchart TD
 | `tools.py` | The 3 tools + JSON schemas (`strict: true`), the order store, a small TF-IDF policy search, and the pure `evaluate_eligibility()` rules. |
 | `prompts.py` | Versioned system prompt, `submit_triage` output tool, and ticket rendering (the message is wrapped in tags and escaped). |
 | `llm.py` | `LLMBackend` interface; `ClaudeBackend` (Anthropic Messages API, function calling) and `MockBackend` (deterministic, offline). |
+| `ollama.py` | `OllamaBackend`: free local LLM via Ollama's `/api/chat` tool calling (standard library only), with recovery of tool calls written as text. |
 | `agent.py` | The orchestrator: loop, retries, state, fallbacks, `enforce_policy()`, summary. |
 | `tracing.py` | JSON-lines events per run (`run_id`, step, tool, input, ok, duration). |
 | `cli.py` | `triage-agent` command. |
@@ -111,6 +112,7 @@ flowchart TD
 ### Why a custom orchestrator (and not LangGraph / an agents framework)?
 - **Transparency for review:** the whole loop is about 150 readable lines in `agent.py`, with no hidden framework behaviour.
 - **Control of guardrails:** pre-checks, retries, step caps and post-checks sit exactly where they're needed.
+- **Swappable models:** three backends share one interface: **Mock** (offline, deterministic), **Ollama** (free, runs locally, data never leaves the machine) and **Claude** (hosted, strongest). The guardrails and policy checks are identical for all three.
 - **Testability:** the `LLMBackend` interface lets tests replay any model behaviour (`ScriptedBackend`), and the `MockBackend` lets the whole system run offline, in CI, for free.
 - **Few dependencies:** only `anthropic` and `pydantic`.
 - **Trade-off:** no built-in graph visualisation, checkpointing or human-approval UI. If the workflow grows into many branches with human pauses, LangGraph would be a natural next step, and the tools and schemas can move over unchanged.
@@ -151,14 +153,33 @@ triage-agent samples/*.json --summary-only
 triage-agent --message "Order #1002 still hasn't arrived" --email ben@example.com --date 2026-11-11
 ```
 
-**Run with Claude** (real LLM):
+**Run with Ollama** (real LLM, free, runs on your machine):
+
+1. Install Ollama from https://ollama.com and start the app.
+2. Download a model that supports tool calling (about 4.7 GB, once):
+
+```bash
+ollama pull qwen2.5:7b
+```
+
+3. Start the web app and pick **Ollama** under *AI backend*, or use the CLI:
+
+```bash
+triage-agent samples/01_damaged_item_auto_refund.json --backend ollama
+```
+
+Use another model with `TRIAGE_OLLAMA_MODEL=llama3.1:8b`, and another Ollama address with `OLLAMA_HOST`.
+Local models are slower (seconds per step) and less accurate than Claude, but the deterministic policy checks still guard every decision.
+
+**Run with Claude** (real LLM, needs an Anthropic API key with credits):
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...      # Windows: set ANTHROPIC_API_KEY=...
 triage-agent samples/02_damaged_expensive_escalate.json --backend claude --log-level INFO
 ```
 
-Settings (env vars): `TRIAGE_BACKEND` (`mock`|`claude`, default: `claude` if a key is set, else `mock`),
+Settings (env vars): `TRIAGE_BACKEND` (`mock`|`ollama`|`claude`, default: `claude` if a key is set, else `mock`),
+`TRIAGE_OLLAMA_MODEL` (default `qwen2.5:7b`), `OLLAMA_HOST` (default `http://localhost:11434`),
 `TRIAGE_MODEL` (default `claude-opus-5-5`), `TRIAGE_EFFORT` (default `medium`), `TRIAGE_MAX_STEPS` (default 8).
 
 Mock customers you can use with `--message`: `anna@example.com` (orders 1001, 1006), `ben@example.com` (1002),
@@ -167,8 +188,8 @@ Mock customers you can use with `--message`: `anna@example.com` (orders 1001, 10
 ## 6. How to test / verify
 
 ```bash
-pytest                     # 74 offline tests (unit + agent behaviour + end-to-end + web API)
-pytest -m live             # 3 extra tests against the real Claude API (needs ANTHROPIC_API_KEY)
+pytest                     # 86 offline tests (unit + agent behaviour + end-to-end + web API + Ollama)
+pytest -m live             # live tests: real Claude (needs ANTHROPIC_API_KEY) and real Ollama (needs qwen2.5:7b)
 ```
 
 | Test file | What it proves |
@@ -177,6 +198,7 @@ pytest -m live             # 3 extra tests against the real Claude API (needs AN
 | `tests/test_tools.py` | Ownership check (no cross-customer lookups), malformed IDs, policy search relevance, strict tool schemas, and a table of eligibility rules including boundaries (exactly 200 EUR). |
 | `tests/test_agent.py` | With a scripted model: retry after invalid JSON, fallback when the model never submits, step cap, API failure, model refusal, tool errors returned as `is_error`, and **rule overrides when the model approves a refund it shouldn't**. |
 | `tests/test_e2e.py` | Every sample ticket through the full pipeline compared with `samples/expected/`, the CLI end-to-end including the JSONL trace, and live Claude tests (opt-in). |
+| `tests/test_ollama.py` | A fake Ollama HTTP server: full agent run through real HTTP, tool calls written as text are recovered, a local model still can't bypass policy rules, clear errors when Ollama isn't running or the model is missing. |
 | `tests/test_web.py` | Web API: page served, samples and customers listed, triage returns result + trace, invalid input returns 422 with field errors. |
 
 CI runs the suite on Python 3.10 and 3.12 (`.github/workflows/tests.yml`).
@@ -259,7 +281,7 @@ Ticket T-011: out of scope -> refuse [priority medium]. ... Flags: out_of_scope:
 - *Regex injection screening* is fast, free and explainable, but it can be bypassed by creative phrasing. That's why layers 2–5 exist. A learned classifier would catch more but adds cost and false positives.
 - *Refusing on detection* is cautious. A real customer who writes "ignore my previous instructions" in an unusual context would be refused. In production, these tickets should go to a human queue rather than being refused outright.
 - *Deterministic overrides* mean the LLM can never be more generous than the rules, which is intended. Unusual goodwill gestures need a human.
-- *Mock LLM mode* is rule-based, so it shows the pipeline but not real language understanding (for example, it handles only English keywords). The Claude backend handles phrasing and other languages.
+- *Mock LLM mode* is rule-based, so it shows the pipeline but not real language understanding (for example, it handles only English keywords). The Ollama and Claude backends handle free phrasing and other languages; Ollama is free but less accurate than Claude.
 
 **Limitations**
 - Mock data (7 orders, 5 policy files). There's no persistence, no real CRM or payments, and policy search is keyword TF-IDF rather than embeddings.
