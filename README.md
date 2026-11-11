@@ -9,6 +9,21 @@ It runs as a **web app** (pick a ticket, press *Run agent*, watch every step) or
 
 ![Web UI](docs/web_ui.png)
 
+## 🚀 Quick start (no API key needed)
+
+```bash
+git clone https://github.com/goldenFlori/support-triage-agent.git
+cd support-triage-agent
+python3 -m venv .venv && source .venv/bin/activate     # Windows: python -m venv .venv; .venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
+triage-web                                              # opens http://127.0.0.1:8000
+```
+
+Click a sample ticket, then press **Run agent**.
+
+👉 **[TESTING.md](TESTING.md) is the full step-by-step testing guide**: install, all 12 scenarios with their expected results,
+your own tickets, automated tests, free local AI with Ollama, Claude, and troubleshooting.
+
 ```text
 "My order #1001 arrived broken, I want my money back"
         │
@@ -187,6 +202,8 @@ Mock customers you can use with `--message`: `anna@example.com` (orders 1001, 10
 
 ## 6. How to test / verify
 
+> Step-by-step instructions with expected results for every scenario are in **[TESTING.md](TESTING.md)**.
+
 ```bash
 pytest                     # 86 offline tests (unit + agent behaviour + end-to-end + web API + Ollama)
 pytest -m live             # live tests: real Claude (needs ANTHROPIC_API_KEY) and real Ollama (needs qwen2.5:7b)
@@ -323,5 +340,6 @@ support-triage-agent/
 ├── samples/               # 12 input tickets + expected/ outputs
 ├── tests/                 # unit, agent-behaviour, e2e (+ opt-in live) tests
 ├── docs/                  # example trace log, UI screenshot
+├── TESTING.md             # step-by-step testing guide
 └── .github/workflows/tests.yml
 ```
