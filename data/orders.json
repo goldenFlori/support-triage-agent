@@ -1,0 +1,9 @@
+[
+  {"order_id": "1001", "customer_email": "anna@example.com", "item": "Wireless headphones", "amount_eur": 45.00, "status": "delivered", "order_date": "2026-10-28", "delivered_date": "2026-11-05", "expected_delivery": "2026-11-04"},
+  {"order_id": "1002", "customer_email": "ben@example.com", "item": "Office chair", "amount_eur": 189.90, "status": "shipped", "order_date": "2026-10-20", "delivered_date": null, "expected_delivery": "2026-10-30"},
+  {"order_id": "1003", "customer_email": "carla@example.com", "item": "4K television", "amount_eur": 649.00, "status": "delivered", "order_date": "2026-10-25", "delivered_date": "2026-11-02", "expected_delivery": "2026-11-03"},
+  {"order_id": "1004", "customer_email": "dan@example.com", "item": "Running shoes", "amount_eur": 79.50, "status": "delivered", "order_date": "2026-09-01", "delivered_date": "2026-09-05", "expected_delivery": "2026-09-06"},
+  {"order_id": "1005", "customer_email": "eva@example.com", "item": "Coffee grinder", "amount_eur": 59.00, "status": "processing", "order_date": "2026-11-09", "delivered_date": null, "expected_delivery": "2026-11-16"},
+  {"order_id": "1006", "customer_email": "anna@example.com", "item": "Desk lamp", "amount_eur": 24.99, "status": "delivered", "order_date": "2026-11-01", "delivered_date": "2026-11-06", "expected_delivery": "2026-11-07"},
+  {"order_id": "1007", "customer_email": "frank@example.com", "item": "Blender", "amount_eur": 89.00, "status": "refunded", "order_date": "2026-10-10", "delivered_date": "2026-10-14", "expected_delivery": "2026-10-15"}
+]
