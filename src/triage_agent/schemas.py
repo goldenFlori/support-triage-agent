@@ -6,6 +6,7 @@ Pydantic model, so malformed data fails loudly instead of silently flowing on.
 
 from __future__ import annotations
 
+import re
 from datetime import date
 from enum import Enum
 from typing import Any, Optional
@@ -48,12 +49,19 @@ class Ticket(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     ticket_id: str = Field(min_length=1, max_length=64)
-    customer_email: str = Field(pattern=EMAIL_PATTERN, max_length=254)
+    customer_email: str = Field(max_length=254)
     message: str = Field(min_length=1, max_length=4000)
     received_at: date = Field(
         default_factory=date.today,
         description="Reference date for policy windows (makes runs reproducible).",
     )
+
+    @field_validator("customer_email")
+    @classmethod
+    def _valid_email(cls, v: str) -> str:
+        if not re.fullmatch(EMAIL_PATTERN, v):
+            raise ValueError("must be a valid email address, e.g. anna@example.com")
+        return v.lower()
 
     @field_validator("message")
     @classmethod

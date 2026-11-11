@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support Triage Agent</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --text: #1d2330; --muted: #667085; --line: #e4e7ec;
+    --accent: #3b5bdb; --accent-soft: #edf2ff;
+    --green: #2b8a3e; --green-soft: #ebfbee; --amber: #b25e09; --amber-soft: #fff4e6;
+    --red: #c92a2a; --red-soft: #fff5f5; --blue: #1864ab; --blue-soft: #e7f5ff;
+    --gray-soft: #f1f3f5; --code: #f8f9fa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --card: #1a1e26; --text: #e6e8ec; --muted: #98a2b3; --line: #2b313c;
+      --accent: #748ffc; --accent-soft: #1f2540;
+      --green: #69db7c; --green-soft: #15291b; --amber: #ffa94d; --amber-soft: #2e2213;
+      --red: #ff8787; --red-soft: #321818; --blue: #74c0fc; --blue-soft: #132636;
+      --gray-soft: #232832; --code: #151920;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  header { padding: 22px 32px 6px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 22px; letter-spacing: -0.01em; }
+  header p { margin: 2px 0 0; color: var(--muted); }
+  .pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--gray-soft); color: var(--muted); }
+  main { padding: 12px 32px 40px; max-width: 1400px; margin: 0 auto; }
+
+  .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+  .stage { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; position: relative; transition: all .25s; }
+  .stage b { display: block; font-size: 13px; }
+  .stage span { font-size: 12px; color: var(--muted); }
+  .stage .num { position: absolute; top: 10px; right: 12px; font-size: 12px; color: var(--muted); }
+  .stage.done { border-color: var(--green); background: var(--green-soft); }
+  .stage.stop { border-color: var(--red); background: var(--red-soft); }
+  .stage.skip { opacity: .45; }
+
+  .grid { display: grid; grid-template-columns: minmax(320px, 420px) 1fr; gap: 18px; align-items: start; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .card h2 { margin: 0 0 12px; font-size: 15px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 6px; }
+  select, input, textarea { width: 100%; font: inherit; color: var(--text); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; }
+  textarea { min-height: 120px; resize: vertical; }
+  select:focus, input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+  .samples { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1px solid var(--line); background: var(--bg); color: var(--text); border-radius: 999px;
+          padding: 4px 10px; font-size: 12.5px; cursor: pointer; }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .orders { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .order { font-size: 12px; padding: 4px 8px; border-radius: 8px; background: var(--gray-soft); cursor: pointer; border: 1px solid transparent; }
+  .order:hover { border-color: var(--accent); }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button { flex: 1; border: 0; background: var(--bg); color: var(--text); font: inherit; padding: 8px; cursor: pointer; }
+  .seg button.on { background: var(--accent); color: #fff; }
+  .seg button:disabled { opacity: .45; cursor: not-allowed; }
+  .run { margin-top: 18px; width: 100%; border: 0; border-radius: 10px; padding: 12px; font: inherit; font-weight: 600;
+         background: var(--accent); color: #fff; cursor: pointer; }
+  .run:disabled { opacity: .6; cursor: wait; }
+
+  .empty { color: var(--muted); text-align: center; padding: 70px 20px; }
+  .decision { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .badge { font-weight: 700; font-size: 14px; padding: 6px 12px; border-radius: 9px; text-transform: uppercase; letter-spacing: .03em; }
+  .b-green { background: var(--green-soft); color: var(--green); }
+  .b-amber { background: var(--amber-soft); color: var(--amber); }
+  .b-red { background: var(--red-soft); color: var(--red); }
+  .b-blue { background: var(--blue-soft); color: var(--blue); }
+  .facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+  .fact { background: var(--gray-soft); border-radius: 10px; padding: 8px 10px; }
+  .fact small { display: block; color: var(--muted); font-size: 11.5px; }
+  .fact b { font-size: 14px; }
+  .summary { background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; font-size: 14px; }
+  .email { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .email .head { background: var(--gray-soft); padding: 7px 12px; font-size: 12px; color: var(--muted); }
+  .email .body { padding: 12px; white-space: pre-wrap; }
+  .alert { border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; font-size: 13.5px; }
+  .alert.warn { background: var(--amber-soft); color: var(--amber); }
+  .alert.err { background: var(--red-soft); color: var(--red); }
+  .alert ul { margin: 6px 0 0; padding-left: 18px; }
+
+  h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 18px 0 8px; }
+  .timeline { list-style: none; margin: 0; padding: 0; position: relative; }
+  .timeline:before { content: ""; position: absolute; left: 11px; top: 6px; bottom: 6px; width: 2px; background: var(--line); }
+  .ev { position: relative; padding: 0 0 12px 34px; opacity: 0; transform: translateY(4px); animation: in .3s forwards; }
+  @keyframes in { to { opacity: 1; transform: none; } }
+  .dot { position: absolute; left: 4px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--card);
+         border: 3px solid var(--muted); }
+  .ev.ok .dot { border-color: var(--green); } .ev.bad .dot { border-color: var(--red); }
+  .ev.ai .dot { border-color: var(--accent); } .ev.warn .dot { border-color: var(--amber); }
+  .ev .t { font-weight: 600; font-size: 14px; }
+  .ev .d { font-size: 13px; color: var(--muted); }
+  .ev code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .ev pre { background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin: 6px 0 0; white-space: pre-wrap; word-break: break-word; }
+  .ms { float: right; font-size: 11.5px; color: var(--muted); font-weight: 400; }
+  details { margin-top: 10px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  details pre { background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 10px; max-height: 420px; overflow: auto; }
+
+  @media (max-width: 900px) {
+    header, main { padding-left: 16px; padding-right: 16px; }
+    .grid { grid-template-columns: 1fr; }
+    .pipeline, .facts { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Support Triage Agent</h1>
+    <p>An AI agent that reads a customer message, checks the facts with tools, applies the policy and decides.</p>
+  </div>
+  <span class="pill" id="modelPill">loading…</span>
+</header>
+
+<main>
+  <section class="pipeline" id="pipeline">
+    <div class="stage" data-stage="1"><span class="num">1</span><b>Input guardrails</b><span>Validate, detect attacks</span></div>
+    <div class="stage" data-stage="2"><span class="num">2</span><b>Agent loop</b><span>AI plans and calls tools</span></div>
+    <div class="stage" data-stage="3"><span class="num">3</span><b>Policy check</b><span>Rules re-check the decision</span></div>
+    <div class="stage" data-stage="4"><span class="num">4</span><b>Result</b><span>JSON, summary, reply</span></div>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>New ticket</h2>
+      <label>Try a sample</label>
+      <div class="samples" id="samples"></div>
+
+      <label for="email">Customer email</label>
+      <select id="email"></select>
+      <div class="orders" id="orders"></div>
+      <div class="hint" id="ordersHint">Click an order to add its number to the message. Pick <i>not-an-email</i> to see input validation.</div>
+
+      <label for="message">Customer message</label>
+      <textarea id="message" placeholder="e.g. My order #1001 arrived broken, I want my money back"></textarea>
+
+      <div class="row">
+        <div>
+          <label for="date">Received on</label>
+          <input type="date" id="date">
+        </div>
+        <div>
+          <label>AI backend</label>
+          <div class="seg" id="backend">
+            <button type="button" data-v="mock" class="on">Mock</button>
+            <button type="button" data-v="claude" id="claudeBtn">Claude</button>
+          </div>
+        </div>
+      </div>
+      <div class="hint" id="backendHint"></div>
+
+      <button class="run" id="run">Run agent</button>
+    </section>
+
+    <section class="card" id="out">
+      <div class="empty">Pick a sample or write a message, then press <b>Run agent</b>.<br>The decision and every step the agent takes will appear here.</div>
+    </section>
+  </div>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+let backend = "mock", customers = [];
+
+const DECISION = {
+  approve_refund:    ["Refund approved", "b-green"],
+  auto_resolve:      ["Resolved automatically", "b-green"],
+  escalate_to_human: ["Escalated to a human", "b-amber"],
+  need_more_info:    ["Needs more info", "b-blue"],
+  refuse:            ["Refused", "b-red"],
+};
+
+async function init() {
+  const [cfg, cust, samples] = await Promise.all(["/api/config", "/api/customers", "/api/samples"].map(u => fetch(u).then(r => r.json())));
+  $("#modelPill").textContent = cfg.claude_available ? `Claude available · ${cfg.model}` : "Mock mode (no API key on server)";
+  $("#date").value = cfg.default_date;
+  if (!cfg.claude_available) {
+    $("#claudeBtn").disabled = true;
+    $("#backendHint").textContent = "Set ANTHROPIC_API_KEY before starting the server to enable Claude.";
+  }
+  customers = cust;
+  for (const c of cust) $("#email").append(new Option(c.email, c.email));
+  $("#email").append(new Option("not-an-email (invalid input test)", "not-an-email"));
+  $("#email").onchange = showOrders; showOrders();
+
+  for (const s of samples) {
+    const b = el("button", "chip", s.title);
+    b.onclick = () => {
+      document.querySelectorAll(".chip").forEach(x => x.classList.remove("active")); b.classList.add("active");
+      const t = s.ticket;
+      if (![...$("#email").options].some(o => o.value === t.customer_email)) $("#email").append(new Option(t.customer_email, t.customer_email));
+      $("#email").value = t.customer_email; showOrders();
+      $("#message").value = t.message; $("#date").value = t.received_at || cfg.default_date;
+      $("#run").dataset.ticket = t.ticket_id;
+    };
+    $("#samples").append(b);
+  }
+  document.querySelectorAll("#backend button").forEach(b => b.onclick = () => {
+    if (b.disabled) return; backend = b.dataset.v;
+    document.querySelectorAll("#backend button").forEach(x => x.classList.toggle("on", x === b));
+  });
+  $("#message").oninput = () => { delete $("#run").dataset.ticket; };
+  $("#run").onclick = run;
+}
+
+function showOrders() {
+  const box = $("#orders"); box.innerHTML = "";
+  const c = customers.find(c => c.email === $("#email").value);
+  if (!c) return;
+  for (const o of c.orders) {
+    const b = el("span", "order", `#${o.order_id} · ${o.item} · €${o.amount_eur.toFixed(2)} · ${o.status}`);
+    b.onclick = () => { const m = $("#message"); m.value = (m.value ? m.value + " " : "") + `order #${o.order_id}`; m.focus(); };
+    box.append(b);
+  }
+}
+
+function setStages(states) {
+  document.querySelectorAll(".stage").forEach((s, i) => { s.className = "stage " + (states[i] || ""); });
+}
+
+async function run() {
+  const btn = $("#run"); btn.disabled = true; btn.textContent = "Agent is working…";
+  setStages([]);
+  const body = { ticket_id: btn.dataset.ticket || "WEB-" + Date.now().toString().slice(-5), customer_email: $("#email").value,
+                 message: $("#message").value, received_at: $("#date").value || null, backend };
+  try {
+    const r = await fetch("/api/triage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await r.json();
+    if (!r.ok) return renderError(data.detail);
+    render(data.result, data.trace);
+  } catch (e) {
+    renderError("Could not reach the server: " + e.message);
+  } finally { btn.disabled = false; btn.textContent = "Run agent"; }
+}
+
+function renderError(detail) {
+  setStages(["stop", "skip", "skip", "skip"]);
+  const out = $("#out"); out.innerHTML = "";
+  const a = el("div", "alert err");
+  if (detail && detail.error === "invalid_ticket") {
+    a.append(el("b", null, "Input rejected by the guardrails before reaching the AI:"));
+    const ul = el("ul"); detail.details.forEach(d => ul.append(el("li", null, d))); a.append(ul);
+  } else a.textContent = typeof detail === "string" ? detail : JSON.stringify(detail);
+  out.append(a);
+}
+
+function render(res, trace) {
+  const refused = trace.some(e => e.event === "refused_by_guardrail");
+  const overridden = res.overrides.length > 0;
+  setStages(refused ? ["stop", "skip", "done", "done"] : ["done", "done", overridden ? "stop" : "done", "done"]);
+
+  const out = $("#out"); out.innerHTML = "";
+  const [label, cls] = DECISION[res.decision] || [res.decision, "b-blue"];
+  const top = el("div", "decision");
+  top.append(el("span", "badge " + cls, label), el("span", "pill", `Ticket ${res.ticket_id} · ${res.backend} · ${res.steps_used} AI steps`));
+  out.append(top);
+
+  const facts = el("div", "facts");
+  [["Intent", res.intent.replaceAll("_", " ")], ["Order", res.order_id ? "#" + res.order_id : "—"],
+   ["Priority", res.priority], ["Refund", res.refund_amount_eur != null ? "€" + res.refund_amount_eur.toFixed(2) : "—"]]
+    .forEach(([k, v]) => { const f = el("div", "fact"); f.append(el("small", null, k), el("b", null, v)); facts.append(f); });
+  out.append(facts);
+
+  if (res.guardrail_flags.length) {
+    const a = el("div", "alert warn"); a.append(el("b", null, "Guardrail flags: "), document.createTextNode(res.guardrail_flags.join(", ")));
+    out.append(a);
+  }
+  if (overridden) {
+    const a = el("div", "alert err"); a.append(el("b", null, "Rules overrode the AI:"));
+    const ul = el("ul"); res.overrides.forEach(o => ul.append(el("li", null, o))); a.append(ul); out.append(a);
+  }
+
+  out.append(el("h3", null, "Summary for the support team"), el("div", "summary", res.summary));
+
+  out.append(el("h3", null, "Reply to the customer"));
+  const mail = el("div", "email");
+  mail.append(el("div", "head", `To: ${$("#email").value}`), el("div", "body", res.customer_reply));
+  out.append(mail);
+
+  out.append(el("h3", null, "What the agent did, step by step"));
+  const ul = el("ul", "timeline");
+  trace.forEach((e, i) => { const li = eventItem(e); if (li) { li.style.animationDelay = (i * 0.07) + "s"; ul.append(li); } });
+  out.append(ul);
+
+  const det = el("details"); det.append(el("summary", null, "Structured JSON result"), el("pre", null, JSON.stringify(res, null, 2)));
+  out.append(det);
+}
+
+function eventItem(e) {
+  const li = el("li", "ev"); li.append(el("span", "dot"));
+  const t = el("div", "t"); const d = el("div", "d");
+  const ms = el("span", "ms", e.t_ms + " ms");
+  switch (e.event) {
+    case "run_started": t.textContent = "Ticket received"; d.textContent = `Backend: ${e.backend} · prompt ${e.prompt_version}`; break;
+    case "input_checked":
+      li.classList.add(e.flags.length ? "warn" : "ok");
+      t.textContent = "Input guardrails checked";
+      d.textContent = e.flags.length ? "Flags: " + e.flags.join(", ") : "Valid ticket, no injection or out-of-scope request found."; break;
+    case "refused_by_guardrail": li.classList.add("bad"); t.textContent = "Refused before reaching the AI"; d.textContent = e.reason; break;
+    case "llm_turn":
+      li.classList.add("ai");
+      t.textContent = `AI step ${e.step}: ` + (e.tool_calls.length ? "decides to call " + e.tool_calls.join(", ") : "answered without a tool");
+      if (e.text) d.textContent = e.text; break;
+    case "tool_call": {
+      li.classList.add(e.ok ? "ok" : "bad");
+      t.textContent = `Tool ${e.tool}` + (e.ok ? "" : " (returned an error)");
+      d.append(el("code", null, "input: " + JSON.stringify(e.input)));
+      d.append(el("pre", null, prettyPreview(e.output_preview))); break;
+    }
+    case "submission_valid": li.classList.add("ok"); t.textContent = "AI submitted its decision"; d.textContent = `Valid JSON · decision: ${e.decision}`; break;
+    case "submission_invalid": li.classList.add("bad"); t.textContent = "AI submitted invalid JSON, asked to retry"; d.textContent = e.error; break;
+    case "reprompt": li.classList.add("warn"); t.textContent = "AI reminded to submit a decision"; break;
+    case "llm_error": li.classList.add("bad"); t.textContent = "AI unavailable, safe fallback used"; d.textContent = e.error; break;
+    case "max_steps_reached": li.classList.add("bad"); t.textContent = "Step limit reached, safe fallback used"; break;
+    case "policy_override": li.classList.add("bad"); t.textContent = "Policy rule overrode the AI"; d.textContent = e.detail; break;
+    case "run_finished": li.classList.add("ok"); t.textContent = "Finished"; d.textContent = `Decision: ${e.decision.replaceAll("_", " ")}`; break;
+    default: return null;
+  }
+  t.append(ms); li.append(t); if (d.textContent || d.childNodes.length) li.append(d);
+  return li;
+}
+
+function prettyPreview(s) {
+  try { return JSON.stringify(JSON.parse(s), null, 1); } catch { return s; }
+}
+
+init();
+</script>
+</body>
+</html>
