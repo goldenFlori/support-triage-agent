@@ -1,0 +1,52 @@
+{
+  "ticket_id": "T-010",
+  "intent": "cancellation",
+  "order_id": "1005",
+  "decision": "auto_resolve",
+  "priority": "low",
+  "refund_amount_eur": null,
+  "policy_references": [
+    "damaged_items",
+    "shipping"
+  ],
+  "customer_reply": "Your order #1005 has not shipped yet, so we have cancelled it free of charge. Any payment will be returned to your original payment method.\n\nBest regards,\nCustomer Support",
+  "reasoning": "Order has not shipped yet and can be cancelled free of charge.",
+  "guardrail_flags": [],
+  "overrides": [],
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool": "lookup_order",
+      "input": {
+        "order_id": "1005"
+      },
+      "ok": true,
+      "output_preview": "{\"order_id\": \"1005\", \"item\": \"Coffee grinder\", \"amount_eur\": 59.0, \"status\": \"processing\", \"order_date\": \"2026-11-09\", \"delivered_date\": null, \"expected_delivery\": \"2026-11-16\", \"days_late\": 0}",
+      "duration_ms": 0.07
+    },
+    {
+      "step": 2,
+      "tool": "search_policy",
+      "input": {
+        "query": "processing cancelled free"
+      },
+      "ok": true,
+      "output_preview": "{\"results\": [{\"source\": \"shipping\", \"text\": \"Orders in \\\"processing\\\" status have not shipped yet and can be cancelled free of charge.\", \"score\": 7.07}, {\"source\": \"damaged_items\", \"text\": \"The cus...",
+      "duration_ms": 0.05
+    },
+    {
+      "step": 3,
+      "tool": "check_refund_eligibility",
+      "input": {
+        "order_id": "1005",
+        "reason": "not_received"
+      },
+      "ok": true,
+      "output_preview": "{\"order_id\": \"1005\", \"eligible\": true, \"requires_human\": false, \"reasons\": [\"Order has not shipped yet and can be cancelled free of charge.\"], \"max_refund_eur\": 59.0}",
+      "duration_ms": 0.02
+    }
+  ],
+  "backend": "mock",
+  "steps_used": 4,
+  "summary": "Ticket T-010: cancellation, order 1005 -> auto resolve [priority low]. Reason: Order has not shipped yet and can be cancelled free of charge. Tools used: lookup_order, search_policy, check_refund_eligibility."
+}

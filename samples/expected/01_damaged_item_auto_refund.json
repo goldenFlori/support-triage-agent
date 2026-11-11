@@ -1,0 +1,52 @@
+{
+  "ticket_id": "T-001",
+  "intent": "damaged_item",
+  "order_id": "1001",
+  "decision": "approve_refund",
+  "priority": "medium",
+  "refund_amount_eur": 45.0,
+  "policy_references": [
+    "damaged_items",
+    "refunds"
+  ],
+  "customer_reply": "We're sorry about your order #1001 (Wireless headphones). Your refund of 45.00 EUR has been approved and will reach your original payment method within 5 business days.\n\nBest regards,\nCustomer Support",
+  "reasoning": "Delivered 6 days ago, within the 30-day window.",
+  "guardrail_flags": [],
+  "overrides": [],
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool": "lookup_order",
+      "input": {
+        "order_id": "1001"
+      },
+      "ok": true,
+      "output_preview": "{\"order_id\": \"1001\", \"item\": \"Wireless headphones\", \"amount_eur\": 45.0, \"status\": \"delivered\", \"order_date\": \"2026-10-28\", \"delivered_date\": \"2026-11-05\", \"expected_delivery\": \"2026-11-04\", \"days_s...",
+      "duration_ms": 0.07
+    },
+    {
+      "step": 2,
+      "tool": "search_policy",
+      "input": {
+        "query": "damaged defective item refund"
+      },
+      "ok": true,
+      "output_preview": "{\"results\": [{\"source\": \"damaged_items\", \"text\": \"Customers should report damaged or defective items within 30 days of delivery.\", \"score\": 4.256}, {\"source\": \"refunds\", \"text\": \"Damaged or defecti...",
+      "duration_ms": 0.06
+    },
+    {
+      "step": 3,
+      "tool": "check_refund_eligibility",
+      "input": {
+        "order_id": "1001",
+        "reason": "damaged"
+      },
+      "ok": true,
+      "output_preview": "{\"order_id\": \"1001\", \"eligible\": true, \"requires_human\": false, \"reasons\": [\"Delivered 6 days ago, within the 30-day window.\"], \"max_refund_eur\": 45.0}",
+      "duration_ms": 0.03
+    }
+  ],
+  "backend": "mock",
+  "steps_used": 4,
+  "summary": "Ticket T-001: damaged item, order 1001 -> approve refund (45.00 EUR) [priority medium]. Reason: Delivered 6 days ago, within the 30-day window. Tools used: lookup_order, search_policy, check_refund_eligibility."
+}

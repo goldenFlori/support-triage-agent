@@ -1,0 +1,52 @@
+{
+  "ticket_id": "T-009",
+  "intent": "damaged_item",
+  "order_id": "1007",
+  "decision": "auto_resolve",
+  "priority": "low",
+  "refund_amount_eur": null,
+  "policy_references": [
+    "damaged_items",
+    "refunds"
+  ],
+  "customer_reply": "Thanks for contacting us about order #1007. Unfortunately it does not qualify for a refund right now: Order was already refunded. If anything changes, just reply to this message.\n\nBest regards,\nCustomer Support",
+  "reasoning": "Order was already refunded.",
+  "guardrail_flags": [],
+  "overrides": [],
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool": "lookup_order",
+      "input": {
+        "order_id": "1007"
+      },
+      "ok": true,
+      "output_preview": "{\"order_id\": \"1007\", \"item\": \"Blender\", \"amount_eur\": 89.0, \"status\": \"refunded\", \"order_date\": \"2026-10-10\", \"delivered_date\": \"2026-10-14\", \"expected_delivery\": \"2026-10-15\", \"days_since_delivery...",
+      "duration_ms": 0.08
+    },
+    {
+      "step": 2,
+      "tool": "search_policy",
+      "input": {
+        "query": "damaged defective item refund"
+      },
+      "ok": true,
+      "output_preview": "{\"results\": [{\"source\": \"damaged_items\", \"text\": \"Customers should report damaged or defective items within 30 days of delivery.\", \"score\": 4.256}, {\"source\": \"refunds\", \"text\": \"Damaged or defecti...",
+      "duration_ms": 0.07
+    },
+    {
+      "step": 3,
+      "tool": "check_refund_eligibility",
+      "input": {
+        "order_id": "1007",
+        "reason": "damaged"
+      },
+      "ok": true,
+      "output_preview": "{\"order_id\": \"1007\", \"eligible\": false, \"requires_human\": false, \"reasons\": [\"Order was already refunded.\"], \"max_refund_eur\": 0.0}",
+      "duration_ms": 0.03
+    }
+  ],
+  "backend": "mock",
+  "steps_used": 4,
+  "summary": "Ticket T-009: damaged item, order 1007 -> auto resolve [priority low]. Reason: Order was already refunded. Tools used: lookup_order, search_policy, check_refund_eligibility."
+}

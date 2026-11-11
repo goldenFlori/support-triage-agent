@@ -18,14 +18,17 @@ logger = logging.getLogger("triage_agent")
 
 
 def configure_logging(level: str = "INFO", log_file: Path | None = None) -> None:
-    logger.setLevel(level)
+    """Console shows `level` and above; the JSONL file always receives the full trace."""
+    logger.setLevel(logging.INFO)
     logger.handlers.clear()
     stream = logging.StreamHandler(sys.stderr)
+    stream.setLevel(level)
     stream.setFormatter(logging.Formatter("%(message)s"))
     logger.addHandler(stream)
     if log_file:
         log_file.parent.mkdir(parents=True, exist_ok=True)
         fh = logging.FileHandler(log_file, encoding="utf-8")
+        fh.setLevel(logging.INFO)
         fh.setFormatter(logging.Formatter("%(message)s"))
         logger.addHandler(fh)
     logger.propagate = False

@@ -1,0 +1,52 @@
+{
+  "ticket_id": "T-002",
+  "intent": "damaged_item",
+  "order_id": "1003",
+  "decision": "escalate_to_human",
+  "priority": "high",
+  "refund_amount_eur": null,
+  "policy_references": [
+    "damaged_items",
+    "refunds"
+  ],
+  "customer_reply": "Thanks for your message about order #1003. A member of our support team will review your request and get back to you within 24 hours.\n\nBest regards,\nCustomer Support",
+  "reasoning": "Delivered 9 days ago, within the 30-day window. Amount 649.00 EUR exceeds the 200 EUR auto-approval limit.",
+  "guardrail_flags": [],
+  "overrides": [],
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool": "lookup_order",
+      "input": {
+        "order_id": "1003"
+      },
+      "ok": true,
+      "output_preview": "{\"order_id\": \"1003\", \"item\": \"4K television\", \"amount_eur\": 649.0, \"status\": \"delivered\", \"order_date\": \"2026-10-25\", \"delivered_date\": \"2026-11-02\", \"expected_delivery\": \"2026-11-03\", \"days_since_...",
+      "duration_ms": 0.08
+    },
+    {
+      "step": 2,
+      "tool": "search_policy",
+      "input": {
+        "query": "damaged defective item refund"
+      },
+      "ok": true,
+      "output_preview": "{\"results\": [{\"source\": \"damaged_items\", \"text\": \"Customers should report damaged or defective items within 30 days of delivery.\", \"score\": 4.256}, {\"source\": \"refunds\", \"text\": \"Damaged or defecti...",
+      "duration_ms": 0.1
+    },
+    {
+      "step": 3,
+      "tool": "check_refund_eligibility",
+      "input": {
+        "order_id": "1003",
+        "reason": "damaged"
+      },
+      "ok": true,
+      "output_preview": "{\"order_id\": \"1003\", \"eligible\": true, \"requires_human\": true, \"reasons\": [\"Delivered 9 days ago, within the 30-day window.\", \"Amount 649.00 EUR exceeds the 200 EUR auto-approval limit.\"], \"max_ref...",
+      "duration_ms": 0.04
+    }
+  ],
+  "backend": "mock",
+  "steps_used": 4,
+  "summary": "Ticket T-002: damaged item, order 1003 -> escalate to human [priority high]. Reason: Delivered 9 days ago, within the 30-day window. Amount 649.00 EUR exceeds the 200 EUR auto-approval limit. Tools used: lookup_order, search_policy, check_refund_eligibility."
+}

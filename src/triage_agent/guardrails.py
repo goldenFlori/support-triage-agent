@@ -26,6 +26,8 @@ _INJECTION_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 # Requests the agent must refuse regardless of how they are phrased.
 _OUT_OF_SCOPE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("other_customer_data", re.compile(r"\b(another|other|someone else'?s?|different)\b.{0,30}\b(customer|user|person|account)'?s?\b.{0,40}\b(orders?|address|email|data|details|card)\b", re.I | re.S)),
+    ("other_customer_data", re.compile(r"\b(orders?|address|email|phone|data|details|card)\b.{0,20}\b(of|for|from)\b.{0,10}\b(another|other|a different|someone else'?s?)\b.{0,15}\b(customers?|users?|persons?|people|accounts?)\b", re.I | re.S)),
+    ("other_customer_data", re.compile(r"\b(someone|somebody|anyone) else'?s?\b.{0,20}\b(orders?|address|email|phone|data|details|card)\b", re.I | re.S)),
     ("credential_change", re.compile(r"\b(change|reset|update)\b.{0,20}\b(password|payment method|card number|account email)\b", re.I | re.S)),
 ]
 
